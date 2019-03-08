@@ -30,20 +30,27 @@ extern NFast_AppHandle app;
  * number is a high water mark, used to track which versions of the signed code
  * have been seen.
  *
- * Creating a fresh NVRAM requires an ACS quorum.
- * TODO: document NVRAM creation + ACL setup process.
- * TODO: experiment with the INCR ACL.
+ * Creating a fresh NVRAM requires an ACS quorum. The easiest way to setup the
+ * NVRAM is to use the Java GUI application.
  *
- * To delete or allocate the NVRAM. By default, the NVRAM is 100 bytes:
+ * Note: we decided not to use the INCR ACL to keep the code simpler. It would
+ * have been a valid alternative implementation.
+ *
+ * The following commands are useful when working with unprotected NVRAMs.
+ *
+ * Delete NVRAM
  * /opt/nfast/bin/nvram-sw -d
+ *
+ * Allocate NVRAM (100 bytes by default)
  * /opt/nfast/bin/nvram-sw -a
  *
- * To initialize the NVRAM to some initial state:
- * printf "%-99s %s" "8414-100" | tr ' ' '\0' > nvram
- * /opt/nfast/bin/nvram-sw --write -m 1 -f nvram
+ * Initialize NVRAM to some initial state:
+ * printf "%-99s %s" "8414-100" | tr ' ' '\0' | /opt/nfast/bin/nvram-sw --write -m 1
+ *
+ * Dump NVRAM:
  * /opt/nfast/bin/nvram-sw --read | xxd
  *
- * TODO: write some tests
+ * TODO: figure out the best way to test this code.
  * - ensure code fails if the MAGIC number mismatches
  * - ensure code works and upgrades if the version number is smaller.
  * - ensure code works if the version number is an exact match
@@ -69,9 +76,16 @@ void check_ver() {
   } else if (version < VERSION) {
     ERROR("check_ver: updating version stored in NVRAM.");
     check_ver_write();
-    // todo: we should re-read!
+    version = check_ver_read();
+    if (version != VERSION) {
+      ERROR("check_ver: re-reading expecting %d, got %d", VERSION, version);
+      exit(-1);
+    }
   } else {
-    assert(version == VERSION);
+    if (version != VERSION) {
+      ERROR("check_ver: expecting %d, got %d", VERSION, version);
+      exit(-1);
+    }
     INFO("check_ver: version match.");
   }
 }
