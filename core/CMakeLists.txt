@@ -84,6 +84,7 @@ if ($ENV{TARGET} MATCHES "nCipher")
       "src/ncipher/module_certificate.c"
       "src/ncipher/no_rollback.c"
       "src/ncipher/protection.c"
+      "src/ncipher/transact.c"
   )
   list(APPEND main_SRC ${extra_SRC})
 else ()
